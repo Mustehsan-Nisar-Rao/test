@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Download System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .download-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .response-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .response-section.show {
+            display: block;
+        }
+
+        .response-title {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .response-content {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            border-left-color: #e74c3c;
+        }
+
+        .success {
+            color: #27ae60;
+            background: #f2fdf2;
+            border-left-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>File Download Center</h1>
+        
+        <button id="downloadBtn" class="download-btn">
+            Download File
+        </button>
+
+        <div id="responseSection" class="response-section">
+            <h3 class="response-title">Download Status:</h3>
+            <div id="responseContent" class="response-content"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            const responseSection = document.getElementById('responseSection');
+            const responseContent = document.getElementById('responseContent');
+            
+            // Show loading state
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Downloading...';
+            responseSection.classList.add('show');
+            responseContent.innerHTML = '<div class="loading">Preparing your download...</div>';
+            responseContent.className = 'response-content';
+            
+            try {
+                // For demonstration, we'll create a simple text file to download
+                // In a real application, you would fetch the file from your server
+                const fileName = 'example-file.txt';
+                const fileContent = 'This is the content of your downloaded file!\n\n' +
+                                  'File downloaded on: ' + new Date().toLocaleString() + '\n' +
+                                  'Thank you for using our download service!';
+                
+                // Create a blob and download the file
+                const blob = new Blob([fileContent], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Show success message
+                responseContent.innerHTML = `
+                    <h4>Download Complete!</h4>
+                    <p><strong>File Name:</strong> ${fileName}</p>
+                    <p><strong>Downloaded At:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>Status:</strong> SUCCESS</p>
+                    <p>Your file has been downloaded successfully.</p>
+                `;
+                responseContent.classList.add('success');
+                
+            } catch (error) {
+                // Handle errors
+                responseContent.innerHTML = `
+                    <h4>Download Failed</h4>
+                    <p>Error: ${error.message}</p>
+                    <p>Please try again later or contact support.</p>
+                `;
+                responseContent.classList.add('error');
+            }
+            
+            // Reset button
+            setTimeout(() => {
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Download File';
+            }, 2000);
+        });
+        
+        // For actual server download (commented out)
+        /*
+        async function downloadFromServer() {
+            // Replace with your actual server endpoint
+            const response = await fetch('/api/download-file', {
+                method: 'GET'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Download failed');
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            
+            // Get filename from content-disposition header or use a default
+            const contentDisposition = response.headers.get('content-disposition');
+            let fileName = 'downloaded-file.pdf';
+            
+            if (contentDisposition) {
+                const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                if (fileNameMatch.length === 2) {
+                    fileName = fileNameMatch[1];
+                }
+            }
+            
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            return fileName;
+        }
+        */
+    </script>
+</body>
+</html>
